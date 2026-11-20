@@ -1,0 +1,1254 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard | SmartGate</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+header {
+    background: #0f172a;
+    color: white;
+    padding: 18px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+header h2 { margin: 0; }
+
+header button {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 25px;
+}
+
+.welcome { margin-bottom: 25px; }
+.welcome h1 { margin-bottom: 8px; }
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 22px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+}
+
+.stat-card p {
+    color: #64748b;
+    margin: 0 0 12px;
+}
+
+.stat-card h2 {
+    margin: 0;
+    font-size: 30px;
+    color: #2563eb;
+}
+
+.section {
+    background: white;
+    padding: 22px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+    overflow-x: auto;
+}
+
+.section h2 { margin-top: 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+th, td {
+    padding: 13px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+th { background: #f8fafc; }
+
+.message {
+    padding: 12px;
+    border-radius: 7px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    margin-bottom: 18px;
+}
+
+.error {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.user-filters,
+.appointment-filters,
+.scan-filters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 18px 0;
+}
+
+.user-filters input,
+.user-filters select,
+.appointment-filters input,
+.appointment-filters select,
+.scan-filters input,
+.scan-filters select {
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font-size: 14px;
+    min-width: 200px;
+}
+
+.user-count,
+.appointment-count,
+.scan-count {
+    color: #64748b;
+    margin-bottom: 12px;
+}
+
+.details-button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 9px 13px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.details-button:hover { background: #1d4ed8; }
+
+.export-button {
+    background: #15803d;
+    color: white;
+    border: none;
+    padding: 12px 17px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.export-button:hover { background: #166534; }
+
+.export-button:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* APPOINTMENT DETAILS POPUP */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+    background: white;
+    width: 100%;
+    max-width: 550px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 21px;
+}
+
+.close-modal {
+    border: none;
+    background: #fee2e2;
+    color: #b91c1c;
+    font-size: 22px;
+    width: 35px;
+    height: 35px;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.detail-row {
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-label {
+    display: block;
+    color: #64748b;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.detail-value {
+    display: block;
+    font-weight: bold;
+    overflow-wrap: anywhere;
+}
+
+@media(max-width: 600px) {
+    header { padding: 15px; }
+    .container { padding: 15px; }
+    .section { padding: 15px; }
+
+    .user-filters input,
+    .user-filters select,
+    .appointment-filters input,
+    .appointment-filters select,
+    .scan-filters input,
+    .scan-filters select {
+        width: 100%;
+    }
+
+    .export-button { width: 100%; }
+    .modal { padding: 18px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h2>🛡️ SmartGate Admin</h2>
+    <button id="logoutButton">Logout</button>
+</header>
+
+<main class="container">
+
+    <div class="welcome">
+        <h1>Admin Dashboard</h1>
+        <p>Welcome, <strong id="adminName">Admin</strong></p>
+        <p>Monitor visitors, employees, guards and gate activities.</p>
+    </div>
+
+    <div id="dashboardMessage" class="message">
+        Loading dashboard data...
+    </div>
+
+    <!-- STATISTICS -->
+
+    <section class="stats">
+
+        <div class="stat-card">
+            <p>Total Users</p>
+            <h2 id="totalUsers">0</h2>
+        </div>
+
+        <div class="stat-card">
+            <p>Total Visitors</p>
+            <h2 id="totalVisitors">0</h2>
+        </div>
+
+        <div class="stat-card">
+            <p>Total Employees</p>
+            <h2 id="totalEmployees">0</h2>
+        </div>
+
+        <div class="stat-card">
+            <p>Total Guards</p>
+            <h2 id="totalGuards">0</h2>
+        </div>
+
+        <div class="stat-card">
+            <p>Total Appointments</p>
+            <h2 id="totalAppointments">0</h2>
+        </div>
+
+        <div class="stat-card">
+            <p>Total Gate Scans</p>
+            <h2 id="totalScans">0</h2>
+        </div>
+
+    </section>
+
+    <!-- EMPLOYEE AND GUARD REGISTRATION -->
+
+    <section class="section">
+
+        <h2>➕ Register Employee / Guard</h2>
+
+        <p>Create new employee and security guard accounts.</p>
+
+        <form id="staffRegistrationForm">
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:15px;">
+
+                <div>
+                    <label for="staffName">Full Name</label>
+                    <input type="text" id="staffName"
+                        placeholder="Enter full name"
+                        required
+                        style="width:100%; padding:12px; margin-top:7px;">
+                </div>
+
+                <div>
+                    <label for="staffEmail">Email Address</label>
+                    <input type="email" id="staffEmail"
+                        placeholder="Enter email address"
+                        required
+                        style="width:100%; padding:12px; margin-top:7px;">
+                </div>
+
+                <div>
+                    <label for="staffPassword">Password</label>
+                    <input type="password" id="staffPassword"
+                        placeholder="Minimum 6 characters"
+                        minlength="6"
+                        required
+                        style="width:100%; padding:12px; margin-top:7px;">
+                </div>
+
+                <div>
+                    <label for="staffRole">Select Role</label>
+                    <select id="staffRole" required
+                        style="width:100%; padding:12px; margin-top:7px;">
+                        <option value="">Choose Role</option>
+                        <option value="employee">Employee</option>
+                        <option value="guard">Guard</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <button type="submit" class="export-button"
+                id="createStaffButton" style="margin-top:20px;">
+                Create Account
+            </button>
+
+        </form>
+
+        <p id="staffRegistrationMessage" class="message"
+            style="display:none; margin-top:15px;">
+        </p>
+
+    </section>
+
+    <!-- USER MANAGEMENT -->
+
+    <section class="section">
+
+        <h2>👥 User Management</h2>
+
+        <div class="user-filters">
+            <input type="text" id="userSearch"
+                placeholder="Search by name or email...">
+
+            <select id="roleFilter">
+                <option value="all">All Users</option>
+                <option value="visitor">Visitors</option>
+                <option value="employee">Employees</option>
+                <option value="guard">Guards</option>
+                <option value="admin">Admins</option>
+            </select>
+        </div>
+
+        <p class="user-count" id="userCount">Showing 0 users</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody id="usersTable">
+                <tr><td colspan="4">Loading users...</td></tr>
+            </tbody>
+        </table>
+
+    </section>
+
+    <!-- APPOINTMENT MANAGEMENT -->
+
+    <section class="section">
+
+        <h2>📅 Appointment Management</h2>
+
+        <div class="appointment-filters">
+
+            <input type="text" id="appointmentSearch"
+                placeholder="Search by visitor or host name...">
+
+            <select id="appointmentStatusFilter">
+                <option value="all">All Appointments</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+            </select>
+
+        </div>
+
+        <button type="button" class="export-button"
+            id="exportAppointmentsButton">
+            📥 Export Appointments to CSV
+        </button>
+
+        <p class="appointment-count" id="appointmentCount">
+            Showing 0 appointments
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Visitor</th>
+                    <th>Host</th>
+                    <th>Purpose</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+
+            <tbody id="appointmentsTable">
+                <tr><td colspan="6">Loading appointments...</td></tr>
+            </tbody>
+        </table>
+
+    </section>
+
+    <!-- GATE SCAN HISTORY -->
+
+    <section class="section">
+
+        <h2>🚪 Gate Scan History</h2>
+
+        <div class="scan-filters">
+
+            <input type="text" id="scanSearch"
+                placeholder="Search visitor name or Guard ID...">
+
+            <select id="scanActionFilter">
+                <option value="all">All Scan Activities</option>
+                <option value="ENTRY">Entry</option>
+                <option value="EXIT">Exit</option>
+                <option value="DUPLICATE">All Duplicate Scans</option>
+            </select>
+
+        </div>
+
+        <button type="button" class="export-button"
+            id="exportScansButton">
+            📥 Export Gate Scans to CSV
+        </button>
+
+        <p class="scan-count" id="scanCount">
+            Showing 0 scans
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Visitor</th>
+                    <th>Action</th>
+                    <th>Appointment ID</th>
+                    <th>Guard ID</th>
+                    <th>Scan Time</th>
+                </tr>
+            </thead>
+
+            <tbody id="scansTable">
+                <tr><td colspan="5">Loading scan history...</td></tr>
+            </tbody>
+        </table>
+
+    </section>
+
+</main>
+
+<!-- APPOINTMENT DETAILS MODAL -->
+
+<div class="modal-overlay" id="appointmentModal">
+
+    <div class="modal">
+
+        <div class="modal-header">
+            <h2>📋 Appointment Details</h2>
+            <button class="close-modal" id="closeModalButton"
+                aria-label="Close">&times;</button>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Appointment ID</span>
+            <span class="detail-value" id="detailId">-</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Visitor Name</span>
+            <span class="detail-value" id="detailVisitor">-</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Visitor Email</span>
+            <span class="detail-value" id="detailEmail">-</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Host Name</span>
+            <span class="detail-value" id="detailHost">-</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Visit Purpose</span>
+            <span class="detail-value" id="detailPurpose">-</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Visit Date</span>
+            <span class="detail-value" id="detailDate">-</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Visit Time</span>
+            <span class="detail-value" id="detailTime">-</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Appointment Status</span>
+            <span class="detail-value" id="detailStatus">-</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">QR Pass Generated</span>
+            <span class="detail-value" id="detailQR">-</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Decision By</span>
+            <span class="detail-value" id="detailDecisionBy">-</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Decision Date</span>
+            <span class="detail-value" id="detailDecisionAt">-</span>
+        </div>
+
+    </div>
+
+</div>
+
+<script type="module">
+
+import { auth, db } from "../js/firebase-config.js";
+
+import {
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+import {
+    collection,
+    onSnapshot,
+    doc,
+    getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+// ELEMENTS
+
+const adminName = document.getElementById("adminName");
+const message = document.getElementById("dashboardMessage");
+const logoutButton = document.getElementById("logoutButton");
+
+const userSearch = document.getElementById("userSearch");
+const roleFilter = document.getElementById("roleFilter");
+const userCount = document.getElementById("userCount");
+
+const appointmentSearch = document.getElementById("appointmentSearch");
+const appointmentStatusFilter =
+    document.getElementById("appointmentStatusFilter");
+const appointmentCount = document.getElementById("appointmentCount");
+
+const scanSearch = document.getElementById("scanSearch");
+const scanActionFilter = document.getElementById("scanActionFilter");
+const scanCount = document.getElementById("scanCount");
+
+const appointmentModal = document.getElementById("appointmentModal");
+const closeModalButton = document.getElementById("closeModalButton");
+
+const exportAppointmentsButton =
+    document.getElementById("exportAppointmentsButton");
+
+const exportScansButton =
+    document.getElementById("exportScansButton");
+
+let unsubscribers = [];
+let allUsers = [];
+let allAppointments = [];
+let allScans = [];
+
+// MESSAGE
+
+function showMessage(text, isError = false) {
+    message.textContent = text;
+    message.className = isError ? "message error" : "message";
+}
+
+// STOP LISTENERS
+
+function stopListeners() {
+    unsubscribers.forEach(unsubscribe => unsubscribe());
+    unsubscribers = [];
+}
+
+// SAFE TEXT
+
+function safeText(value) {
+    return value ?? "-";
+}
+
+// FORMAT DATE
+
+function formatDate(value) {
+
+    if (!value) return "-";
+
+    if (value.toDate) {
+        return value.toDate().toLocaleString();
+    }
+
+    return String(value);
+}
+
+// CSV CELL PROTECTION
+
+function csvCell(value) {
+
+    let textValue = value == null ? "" : String(value);
+
+    if (/^[=+\-@\t\r]/.test(textValue)) {
+        textValue = "'" + textValue;
+    }
+
+    return '"' + textValue.replace(/"/g, '""') + '"';
+}
+
+// DOWNLOAD CSV
+
+function downloadCSV(headers, rows, filename) {
+
+    const csvContent = [
+        headers.map(csvCell).join(","),
+        ...rows.map(row => row.map(csvCell).join(","))
+    ].join("\r\n");
+
+    const blob = new Blob(
+        ["\uFEFF" + csvContent],
+        { type: "text/csv;charset=utf-8;" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+}
+
+// DISPLAY USERS
+
+function displayUsers() {
+
+    const searchValue = userSearch.value.trim().toLowerCase();
+    const selectedRole = roleFilter.value;
+
+    const filteredUsers = allUsers.filter(user => {
+
+        const name = (user.fullName || "").toLowerCase();
+        const email = (user.email || "").toLowerCase();
+
+        return (
+            (name.includes(searchValue) || email.includes(searchValue)) &&
+            (selectedRole === "all" || user.role === selectedRole)
+        );
+    });
+
+    const tbody = document.getElementById("usersTable");
+    tbody.innerHTML = "";
+
+    userCount.textContent =
+        `Showing ${filteredUsers.length} of ${allUsers.length} users`;
+
+    if (filteredUsers.length === 0) {
+        tbody.innerHTML =
+            '<tr><td colspan="4">No matching users found.</td></tr>';
+        return;
+    }
+
+    filteredUsers.forEach(user => {
+
+        const row = document.createElement("tr");
+
+        [
+            safeText(user.fullName),
+            safeText(user.email),
+            safeText(user.role),
+            user.active === true ? "Active" : "Inactive"
+        ].forEach(value => {
+
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+
+        });
+
+        tbody.appendChild(row);
+    });
+}
+
+userSearch.addEventListener("input", displayUsers);
+roleFilter.addEventListener("change", displayUsers);
+
+// FILTER APPOINTMENTS
+
+function getFilteredAppointments() {
+
+    const searchValue = appointmentSearch.value.trim().toLowerCase();
+    const selectedStatus = appointmentStatusFilter.value;
+
+    return allAppointments.filter(appointment => {
+
+        const visitorName =
+            (appointment.visitorName || "").toLowerCase();
+
+        const hostName =
+            (appointment.hostName || "").toLowerCase();
+
+        return (
+            (visitorName.includes(searchValue) ||
+             hostName.includes(searchValue)) &&
+            (selectedStatus === "all" ||
+             (appointment.status || "").toLowerCase() === selectedStatus)
+        );
+    });
+}
+
+// EXPORT APPOINTMENTS
+
+function exportAppointmentsToCSV() {
+
+    const appointments = getFilteredAppointments();
+
+    if (appointments.length === 0) {
+        showMessage("No appointments available to export.", true);
+        return;
+    }
+
+    const headers = [
+        "Appointment ID",
+        "Visitor Name",
+        "Visitor Email",
+        "Host Name",
+        "Purpose",
+        "Visit Date",
+        "Visit Time",
+        "Status",
+        "QR Pass Generated",
+        "Decision By",
+        "Decision Date"
+    ];
+
+    const rows = appointments.map(appointment => [
+
+        appointment.id,
+        appointment.visitorName,
+        appointment.visitorEmail,
+        appointment.hostName,
+        appointment.purpose,
+        appointment.visitDate,
+        appointment.visitTime,
+        appointment.status,
+        appointment.qrGenerated === true ? "Yes" : "No",
+        appointment.decisionBy,
+        appointment.decisionAt
+            ? formatDate(appointment.decisionAt)
+            : ""
+
+    ]);
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    downloadCSV(
+        headers,
+        rows,
+        `SmartGate_Appointments_${today}.csv`
+    );
+
+    showMessage(
+        `${appointments.length} appointment records exported successfully.`
+    );
+}
+
+exportAppointmentsButton.addEventListener(
+    "click",
+    exportAppointmentsToCSV
+);
+
+// APPOINTMENT DETAILS
+
+function showAppointmentDetails(appointmentId) {
+
+    const appointment = allAppointments.find(
+        item => item.id === appointmentId
+    );
+
+    if (!appointment) {
+        showMessage("Appointment details not found.", true);
+        return;
+    }
+
+    document.getElementById("detailId").textContent = appointment.id;
+    document.getElementById("detailVisitor").textContent =
+        safeText(appointment.visitorName);
+    document.getElementById("detailEmail").textContent =
+        safeText(appointment.visitorEmail);
+    document.getElementById("detailHost").textContent =
+        safeText(appointment.hostName);
+    document.getElementById("detailPurpose").textContent =
+        safeText(appointment.purpose);
+    document.getElementById("detailDate").textContent =
+        safeText(appointment.visitDate);
+    document.getElementById("detailTime").textContent =
+        safeText(appointment.visitTime);
+    document.getElementById("detailStatus").textContent =
+        safeText(appointment.status);
+    document.getElementById("detailQR").textContent =
+        appointment.qrGenerated === true ? "Yes" : "No";
+    document.getElementById("detailDecisionBy").textContent =
+        safeText(appointment.decisionBy);
+    document.getElementById("detailDecisionAt").textContent =
+        formatDate(appointment.decisionAt);
+
+    appointmentModal.classList.add("show");
+}
+
+function closeAppointmentModal() {
+    appointmentModal.classList.remove("show");
+}
+
+closeModalButton.addEventListener("click", closeAppointmentModal);
+
+appointmentModal.addEventListener("click", event => {
+    if (event.target === appointmentModal) {
+        closeAppointmentModal();
+    }
+});
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+        closeAppointmentModal();
+    }
+});
+
+// DISPLAY APPOINTMENTS
+
+function displayAppointments() {
+
+    const filteredAppointments = getFilteredAppointments();
+    const tbody = document.getElementById("appointmentsTable");
+
+    tbody.innerHTML = "";
+
+    appointmentCount.textContent =
+        `Showing ${filteredAppointments.length} of ${allAppointments.length} appointments`;
+
+    exportAppointmentsButton.disabled =
+        filteredAppointments.length === 0;
+
+    if (filteredAppointments.length === 0) {
+        tbody.innerHTML =
+            '<tr><td colspan="6">No matching appointments found.</td></tr>';
+        return;
+    }
+
+    filteredAppointments.forEach(appointment => {
+
+        const row = document.createElement("tr");
+
+        [
+            safeText(appointment.visitorName),
+            safeText(appointment.hostName),
+            safeText(appointment.purpose),
+            safeText(appointment.visitDate),
+            safeText(appointment.status)
+        ].forEach(value => {
+
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+
+        });
+
+        const actionCell = document.createElement("td");
+        const detailsButton = document.createElement("button");
+
+        detailsButton.textContent = "View Details";
+        detailsButton.className = "details-button";
+
+        detailsButton.addEventListener("click", () => {
+            showAppointmentDetails(appointment.id);
+        });
+
+        actionCell.appendChild(detailsButton);
+        row.appendChild(actionCell);
+
+        tbody.appendChild(row);
+    });
+}
+
+appointmentSearch.addEventListener("input", displayAppointments);
+
+appointmentStatusFilter.addEventListener(
+    "change",
+    displayAppointments
+);
+
+// FILTER GATE SCANS
+
+function getFilteredScans() {
+
+    const searchValue = scanSearch.value.trim().toLowerCase();
+    const selectedAction = scanActionFilter.value;
+
+    return allScans.filter(scan => {
+
+        const visitorName =
+            (scan.visitorName || "").toLowerCase();
+
+        const guardId =
+            (scan.scannedBy || "").toLowerCase();
+
+        const action =
+            (scan.action || "").toUpperCase();
+
+        const matchesSearch =
+            visitorName.includes(searchValue) ||
+            guardId.includes(searchValue);
+
+        let matchesAction = true;
+
+        if (selectedAction === "ENTRY" || selectedAction === "EXIT") {
+            matchesAction = action === selectedAction;
+        }
+
+        if (selectedAction === "DUPLICATE") {
+            matchesAction = action.startsWith("DUPLICATE");
+        }
+
+        return matchesSearch && matchesAction;
+    });
+}
+
+// DISPLAY GATE SCANS
+
+function displayScans() {
+
+    const filteredScans = getFilteredScans();
+    const tbody = document.getElementById("scansTable");
+
+    tbody.innerHTML = "";
+
+    scanCount.textContent =
+        `Showing ${filteredScans.length} of ${allScans.length} scans`;
+
+    exportScansButton.disabled = filteredScans.length === 0;
+
+    if (filteredScans.length === 0) {
+
+        tbody.innerHTML =
+            '<tr><td colspan="5">No matching scan records found.</td></tr>';
+
+        return;
+    }
+
+    filteredScans.forEach(scan => {
+
+        const row = document.createElement("tr");
+
+        const values = [
+            safeText(scan.visitorName),
+            safeText(scan.action),
+            safeText(scan.appointmentId),
+            safeText(scan.scannedBy),
+            formatDate(scan.scannedAt)
+        ];
+
+        values.forEach(value => {
+
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+
+        });
+
+        tbody.appendChild(row);
+    });
+}
+
+// SCAN SEARCH AND FILTER EVENTS
+
+scanSearch.addEventListener("input", displayScans);
+
+scanActionFilter.addEventListener("change", displayScans);
+
+// EXPORT GATE SCANS
+
+function exportScansToCSV() {
+
+    const scans = getFilteredScans();
+
+    if (scans.length === 0) {
+        showMessage("No gate scan records available to export.", true);
+        return;
+    }
+
+    const headers = [
+        "Scan ID",
+        "Visitor Name",
+        "Action",
+        "Guard ID",
+        "Appointment ID",
+        "Scan Time"
+    ];
+
+    const rows = scans.map(scan => [
+
+        scan.id,
+        scan.visitorName,
+        scan.action,
+        scan.scannedBy,
+        scan.appointmentId,
+        scan.scannedAt ? formatDate(scan.scannedAt) : ""
+
+    ]);
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    downloadCSV(
+        headers,
+        rows,
+        `SmartGate_Gate_Scans_${today}.csv`
+    );
+
+    showMessage(`${scans.length} gate scan records exported successfully.`);
+}
+
+exportScansButton.addEventListener("click", exportScansToCSV);
+
+// LOAD DASHBOARD
+
+function loadDashboard() {
+
+    stopListeners();
+
+    // USERS
+
+    const usersListener = onSnapshot(
+        collection(db, "users"),
+
+        snapshot => {
+
+            allUsers = snapshot.docs.map(
+                docSnapshot => docSnapshot.data()
+            );
+
+            document.getElementById("totalUsers").textContent =
+                allUsers.length;
+
+            document.getElementById("totalVisitors").textContent =
+                allUsers.filter(user => user.role === "visitor").length;
+
+            document.getElementById("totalEmployees").textContent =
+                allUsers.filter(user => user.role === "employee").length;
+
+            document.getElementById("totalGuards").textContent =
+                allUsers.filter(user => user.role === "guard").length;
+
+            displayUsers();
+        },
+
+        error => {
+            console.error("Users Error:", error);
+            showMessage("Users: " + error.message, true);
+        }
+    );
+
+    // APPOINTMENTS
+
+    const appointmentsListener = onSnapshot(
+        collection(db, "appointments"),
+
+        snapshot => {
+
+            allAppointments = snapshot.docs.map(docSnapshot => ({
+                id: docSnapshot.id,
+                ...docSnapshot.data()
+            }));
+
+            document.getElementById("totalAppointments").textContent =
+                allAppointments.length;
+
+            displayAppointments();
+        },
+
+        error => {
+            console.error("Appointments Error:", error);
+            showMessage("Appointments: " + error.message, true);
+        }
+    );
+
+    // GATE SCANS
+
+    const scansListener = onSnapshot(
+        collection(db, "gateScans"),
+
+        snapshot => {
+
+            allScans = snapshot.docs.map(docSnapshot => ({
+                id: docSnapshot.id,
+                ...docSnapshot.data()
+            }));
+
+            document.getElementById("totalScans").textContent =
+                allScans.length;
+
+            displayScans();
+        },
+
+        error => {
+            console.error("Gate Scans Error:", error);
+            showMessage("Gate scans: " + error.message, true);
+        }
+    );
+
+    unsubscribers.push(
+        usersListener,
+        appointmentsListener,
+        scansListener
+    );
+}
+
+// ADMIN AUTHENTICATION
+
+onAuthStateChanged(auth, async user => {
+
+    stopListeners();
+
+    if (!user) {
+        window.location.href = "../login.html";
+        return;
+    }
+
+    try {
+
+        const userDoc = await getDoc(
+            doc(db, "users", user.uid)
+        );
+
+        if (
+            !userDoc.exists() ||
+            userDoc.data().role !== "admin" ||
+            userDoc.data().active !== true
+        ) {
+
+            showMessage("Access denied. Admin account required.", true);
+
+            await signOut(auth);
+
+            window.location.href = "../login.html";
+            return;
+        }
+
+        adminName.textContent =
+            userDoc.data().fullName || "Admin";
+
+        showMessage("Admin dashboard connected successfully.");
+
+        loadDashboard();
+
+    } catch (error) {
+
+        console.error("Admin Authentication Error:", error);
+
+        showMessage(
+            "Unable to load admin profile: " + error.message,
+            true
+        );
+    }
+});
+
+// LOGOUT
+
+logoutButton.addEventListener("click", async () => {
+
+    stopListeners();
+
+    await signOut(auth);
+
+    window.location.href = "../login.html";
+});
+
+</script>
+
+<script type="module" src="../js/admin-users.js"></script>
+
+</body>
+</html>

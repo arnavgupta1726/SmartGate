@@ -1,0 +1,288 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guard Dashboard | SmartGate</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #172033;
+        }
+
+        .layout { display: flex; min-height: 100vh; }
+
+        .sidebar {
+            width: 245px;
+            background: #101d35;
+            color: white;
+            padding: 25px 18px;
+        }
+
+        .brand {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 38px;
+        }
+
+        .sidebar a {
+            display: block;
+            color: #d5deed;
+            text-decoration: none;
+            padding: 13px 14px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+
+        .sidebar a.active, .sidebar a:hover {
+            background: #244875;
+            color: white;
+        }
+
+        .main { flex: 1; min-width: 0; padding: 28px; }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        h1 { margin: 0 0 8px; }
+        .muted { color: #64748b; }
+
+        button {
+            border: 0;
+            border-radius: 8px;
+            padding: 12px 18px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        .logout { background: #e5484d; color: white; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .stat, .panel {
+            background: white;
+            border-radius: 13px;
+            padding: 22px;
+            box-shadow: 0 3px 14px rgba(15, 23, 42, .06);
+        }
+
+        .stat p { color: #64748b; margin: 0 0 10px; }
+        .stat strong { font-size: 27px; }
+
+        .panel { margin-bottom: 22px; }
+        .panel h2 { margin-top: 0; }
+
+        #reader {
+            width: 100%;
+            max-width: 520px;
+            margin: 18px auto;
+        }
+
+        #scanMessage {
+            padding: 13px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: #334155;
+            min-height: 45px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .camera-buttons, .action-buttons, .manual-entry {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .start-btn { background: #2563eb; color: white; }
+        .stop-btn { background: #64748b; color: white; }
+        .verify-btn { background: #2563eb; color: white; }
+        .entry-btn { background: #168653; color: white; }
+        .exit-btn { background: #2563eb; color: white; }
+
+        .manual-entry input {
+            flex: 1;
+            min-width: 220px;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .visitor-details {
+            background: #f8fafc;
+            border: 1px solid #dbe4ef;
+            padding: 18px;
+            border-radius: 10px;
+            margin-top: 18px;
+        }
+
+        .visitor-details p { margin: 9px 0; }
+
+        .status-label {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            background: #e0e7ff;
+            color: #3730a3;
+            font-weight: bold;
+        }
+
+        .scan-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 9px;
+            padding: 15px;
+            margin: 12px 0;
+        }
+
+        .scan-item p { margin: 6px 0; color: #475569; }
+
+        .entry { color: #168653; font-weight: bold; }
+        .exit { color: #2563eb; font-weight: bold; }
+        .duplicate { color: #dc2626; font-weight: bold; }
+
+        .empty {
+            padding: 20px;
+            text-align: center;
+            color: #64748b;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        @media(max-width: 700px) {
+            .layout { display: block; }
+            .sidebar { width: 100%; }
+            .main { padding: 17px; }
+        }
+    </style>
+</head>
+
+<body>
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="brand">🛡️ SmartGate</div>
+        <a href="guard-dashboard.html" class="active">Guard Dashboard</a>
+        <a href="#scanner">QR Scanner</a>
+        <a href="#history">Scan History</a>
+    </aside>
+
+    <main class="main">
+
+        <header class="topbar">
+            <div>
+                <h1>Security Guard Dashboard</h1>
+                <div class="muted">Visitor entry and exit management</div>
+            </div>
+            <button class="logout" id="logoutButton">Logout</button>
+        </header>
+
+        <section class="stats">
+            <div class="stat">
+                <p>Total Scans</p>
+                <strong id="totalScans">0</strong>
+            </div>
+            <div class="stat">
+                <p>Entries</p>
+                <strong id="entryCount">0</strong>
+            </div>
+            <div class="stat">
+                <p>Exits</p>
+                <strong id="exitCount">0</strong>
+            </div>
+        </section>
+
+        <section class="panel" id="scanner">
+            <h2>📷 Scan Visitor QR Code</h2>
+            <p class="muted">
+                Start the camera and scan an approved visitor pass.
+            </p>
+
+            <div class="camera-buttons">
+                <button type="button" class="start-btn" id="startCameraButton">
+                    Start Camera
+                </button>
+                <button type="button" class="stop-btn" id="stopCameraButton" disabled>
+                    Stop Camera
+                </button>
+            </div>
+
+            <div id="reader"></div>
+
+            <div id="scanMessage">
+                Scanner is waiting. Start the camera or enter a pass manually.
+            </div>
+
+            <h3>Manual Pass ID Entry</h3>
+            <p class="muted">
+                Enter the complete QR text if the camera is unavailable.
+            </p>
+
+            <div class="manual-entry">
+                <input
+                    type="text"
+                    id="manualQrInput"
+                    placeholder="SMARTGATE|PASS|appointmentId"
+                >
+                <button type="button" class="verify-btn" id="manualScanButton">
+                    Verify Pass
+                </button>
+            </div>
+
+            <div id="visitorDetails" class="visitor-details" hidden>
+                <h3>Visitor Details</h3>
+                <p><strong>Name:</strong> <span id="visitorName">-</span></p>
+                <p><strong>Email:</strong> <span id="visitorEmail">-</span></p>
+                <p><strong>Purpose:</strong> <span id="visitorPurpose">-</span></p>
+                <p><strong>Visit Date:</strong> <span id="visitorDate">-</span></p>
+                <p><strong>Pass ID:</strong> <span id="visitorPassId">-</span></p>
+                <p><strong>Gate Status:</strong> <span id="visitorGateStatus" class="status-label">Not entered</span></p>
+
+                <div class="action-buttons">
+                    <button type="button" class="entry-btn" id="entryButton" disabled>
+                        Mark Entry
+                    </button>
+                    <button type="button" class="exit-btn" id="exitButton" disabled>
+                        Mark Exit
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel" id="history">
+            <h2>📋 Recent Scan History</h2>
+            <div id="scanHistory">
+                <div class="empty">Loading scan history...</div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script type="module" src="../js/guard-scanner.js"></script>
+
+</body>
+</html>

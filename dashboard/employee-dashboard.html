@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard | SmartGate</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #172033;
+        }
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 245px;
+            background: #101d35;
+            color: white;
+            padding: 25px 18px;
+        }
+        .brand { font-size: 22px; font-weight: bold; margin-bottom: 38px; }
+        .sidebar a {
+            display: block;
+            color: #d5deed;
+            text-decoration: none;
+            padding: 13px 14px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+        .sidebar a.active, .sidebar a:hover {
+            background: #244875;
+            color: white;
+        }
+        .main { flex: 1; padding: 30px; min-width: 0; }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+        h1 { margin: 0 0 8px; font-size: 28px; }
+        .muted { color: #64748b; }
+        .logout {
+            border: 0;
+            border-radius: 8px;
+            padding: 11px 18px;
+            background: #e5484d;
+            color: white;
+            cursor: pointer;
+        }
+        .welcome, .panel, .stat {
+            background: white;
+            border-radius: 13px;
+            padding: 22px;
+            box-shadow: 0 3px 14px rgba(15, 23, 42, .06);
+        }
+        .welcome { margin-bottom: 22px; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+        .stat p { color: #64748b; margin: 0 0 10px; }
+        .stat strong { font-size: 28px; }
+        .panel h2 { margin-top: 0; }
+        .appointment {
+            border: 1px solid #e2e8f0;
+            border-radius: 11px;
+            padding: 18px;
+            margin: 15px 0;
+        }
+        .appointment h3 { margin: 0 0 12px; }
+        .details { line-height: 1.8; color: #475569; }
+        .actions { display: flex; gap: 10px; margin-top: 15px; }
+        .actions button {
+            border: 0;
+            padding: 10px 16px;
+            border-radius: 7px;
+            color: white;
+            cursor: pointer;
+        }
+        .approve { background: #168653; }
+        .reject { background: #dc4545; }
+        .message { margin: 12px 0; color: #475569; }
+        .empty {
+            padding: 22px;
+            background: #f8fafc;
+            border-radius: 9px;
+            color: #64748b;
+            text-align: center;
+        }
+        @media (max-width: 700px) {
+            .layout { display: block; }
+            .sidebar { width: 100%; }
+            .main { padding: 18px; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">🛡️ SmartGate</div>
+        <a href="employee-dashboard.html" class="active">Dashboard</a>
+        <a href="#requests">Appointment Requests</a>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div>
+                <h1>Employee Dashboard</h1>
+                <div class="muted">Manage visitor appointment requests</div>
+            </div>
+            <button class="logout" id="logoutButton">Logout</button>
+        </header>
+
+        <section class="welcome">
+            <h2>Welcome, <span id="employeeName">Employee</span></h2>
+            <p class="muted">Review visitor requests and approve or reject appointments.</p>
+            <p id="pageMessage" class="message">Loading your dashboard...</p>
+        </section>
+
+        <section class="stats">
+            <div class="stat">
+                <p>Pending Requests</p>
+                <strong id="pendingCount">0</strong>
+            </div>
+            <div class="stat">
+                <p>Approved Requests</p>
+                <strong id="approvedCount">0</strong>
+            </div>
+            <div class="stat">
+                <p>Rejected Requests</p>
+                <strong id="rejectedCount">0</strong>
+            </div>
+        </section>
+
+        <section class="panel" id="requests">
+            <h2>Visitor Appointment Requests</h2>
+            <p class="muted">Review the details before making a decision.</p>
+            <div id="appointmentsList">
+                <div class="empty">Loading appointment requests...</div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script type="module">
+    import { auth, db } from "../js/firebase-config.js";
+    import { onAuthStateChanged, signOut } from
+        "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { doc, getDoc } from
+        "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const employeeName = document.getElementById("employeeName");
+    const pageMessage = document.getElementById("pageMessage");
+    const logoutButton = document.getElementById("logoutButton");
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            window.location.href = "../login.html";
+            return;
+        }
+
+        try {
+            const profileSnapshot = await getDoc(doc(db, "users", user.uid));
+
+            if (!profileSnapshot.exists() ||
+                profileSnapshot.data().role !== "employee" ||
+                profileSnapshot.data().active !== true) {
+                pageMessage.textContent = "Access denied. This account is not an active employee account.";
+                await signOut(auth);
+                setTimeout(() => {
+                    window.location.href = "../login.html";
+                }, 1500);
+                return;
+            }
+
+            employeeName.textContent =
+                profileSnapshot.data().fullName || user.displayName || "Employee";
+
+            pageMessage.textContent = "You are logged in successfully.";
+        } catch (error) {
+            console.error(error);
+            pageMessage.textContent = "Could not load your employee profile. Please try again.";
+        }
+    });
+
+    logoutButton.addEventListener("click", async () => {
+        await signOut(auth);
+        window.location.href = "../login.html";
+    });
+</script>
+
+<script type="module" src="../js/employee.js"></script>
+</body>
+</html>

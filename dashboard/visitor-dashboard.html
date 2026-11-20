@@ -1,0 +1,531 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Visitor Dashboard | SmartGate</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 245px;
+            background: #0f172a;
+            color: white;
+            padding: 25px 18px;
+        }
+
+        .brand {
+            font-size: 23px;
+            font-weight: bold;
+            margin-bottom: 40px;
+        }
+
+        .sidebar p {
+            color: #94a3b8;
+            font-size: 12px;
+            margin: 25px 10px 12px;
+        }
+
+        .nav-link {
+            display: block;
+            color: #cbd5e1;
+            text-decoration: none;
+            padding: 13px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .nav-link.active,
+        .nav-link:hover {
+            background: #2563eb;
+            color: white;
+        }
+
+        .main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .topbar {
+            background: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 8px #00000008;
+        }
+
+        .topbar h2 {
+            margin: 0;
+        }
+
+        .logout {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 11px 18px;
+            border-radius: 7px;
+            cursor: pointer;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .welcome {
+            margin-bottom: 25px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fit,
+                minmax(190px, 1fr)
+            );
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px #00000008;
+        }
+
+        .card h3 {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .card strong {
+            font-size: 28px;
+            color: #2563eb;
+        }
+
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 22px;
+            box-shadow: 0 3px 12px #00000008;
+        }
+
+        .section h2 {
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            margin-bottom: 18px;
+            font-size: 15px;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: 2px solid #93c5fd;
+            border-color: #2563eb;
+        }
+
+        .submit-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 13px 22px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .submit-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .appointment-card {
+            padding: 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            background: #ffffff;
+        }
+
+        .appointment-card h3 {
+            margin-top: 0;
+        }
+
+        .appointment-status {
+            display: inline-block;
+            padding: 7px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .appointment-status.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .appointment-status.approved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .appointment-status.rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+        }
+
+        #appointmentMessage {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .qr-info {
+            background: #eff6ff;
+            padding: 18px;
+            border-radius: 9px;
+            color: #1e40af;
+        }
+
+        #notificationCount {
+            background: #dc2626;
+            color: white;
+            padding: 2px 7px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        @media(max-width: 700px) {
+            .dashboard {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .content {
+                padding: 18px;
+            }
+
+            .topbar {
+                padding: 17px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="brand">🛡️ SmartGate</div>
+
+        <p>MAIN MENU</p>
+
+        <a href="#" class="nav-link active">
+            🏠 Dashboard
+        </a>
+
+        <a href="#booking" class="nav-link">
+            📅 Book Appointment
+        </a>
+
+        <a href="#appointments" class="nav-link">
+            📋 My Appointments
+        </a>
+
+        <a href="#notifications" class="nav-link">
+            🔔 Notifications
+            (<span id="notificationCount">0</span>)
+        </a>
+
+        <a href="#qr" class="nav-link">
+            🎫 My QR Pass
+        </a>
+
+        <p>ACCOUNT</p>
+
+        <a href="#" class="nav-link">
+            👤 My Profile
+        </a>
+
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <header class="topbar">
+
+            <h2>Visitor Dashboard</h2>
+
+            <button class="logout" id="logoutButton">
+                Logout
+            </button>
+
+        </header>
+
+        <div class="content">
+
+            <!-- WELCOME -->
+            <section class="welcome">
+
+                <h1>
+                    Welcome, <span id="userName">Visitor</span>!
+                </h1>
+
+                <p>
+                    Manage your appointments and visitor passes from here.
+                </p>
+
+            </section>
+
+            <!-- DASHBOARD CARDS -->
+            <section class="cards">
+
+                <div class="card">
+                    <h3>My Appointments</h3>
+                    <strong id="appointmentCount">0</strong>
+                </div>
+
+                <div class="card">
+                    <h3>Approved Visits</h3>
+                    <strong id="approvedCount">0</strong>
+                </div>
+
+                <div class="card">
+                    <h3>Active QR Passes</h3>
+                    <strong id="qrCount">0</strong>
+                </div>
+
+                <div class="card">
+                    <h3>Account Role</h3>
+                    <strong style="font-size:20px;">
+                        Visitor
+                    </strong>
+                </div>
+
+            </section>
+
+            <!-- APPOINTMENT BOOKING -->
+            <section class="section" id="booking">
+
+                <h2>📅 Book an Appointment</h2>
+
+                <p>
+                    Fill in the details to request permission for your visit.
+                </p>
+
+                <form id="appointmentForm">
+
+                    <label for="hostName">
+                        Host / Employee Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="hostName"
+                        placeholder="Enter host name"
+                        required
+                    >
+
+                    <label for="purpose">
+                        Purpose of Visit
+                    </label>
+
+                    <textarea
+                        id="purpose"
+                        rows="3"
+                        placeholder="Why do you want to visit?"
+                        required
+                    ></textarea>
+
+                    <label for="visitDate">
+                        Visit Date
+                    </label>
+
+                    <input
+                        type="date"
+                        id="visitDate"
+                        required
+                    >
+
+                    <label for="visitTime">
+                        Visit Time
+                    </label>
+
+                    <input
+                        type="time"
+                        id="visitTime"
+                        required
+                    >
+
+                    <button
+                        type="submit"
+                        class="submit-btn"
+                    >
+                        Submit Appointment
+                    </button>
+
+                    <p id="appointmentMessage"></p>
+
+                </form>
+
+            </section>
+
+            <!-- APPOINTMENT HISTORY -->
+            <section class="section" id="appointments">
+
+                <h2>📋 My Appointments</h2>
+
+                <div id="myAppointments">
+
+                    <p>Loading appointments...</p>
+
+                </div>
+
+            </section>
+
+            <!-- QR PASS -->
+            <section class="section" id="qr">
+
+                <h2>🎫 My QR Visitor Pass</h2>
+
+                <div id="qrPassContainer">
+
+                    <div class="qr-info">
+
+                        <h3>QR Pass Not Available Yet</h3>
+
+                        <p>
+                            Your QR visitor pass will be generated only
+                            after your host approves your appointment.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- NOTIFICATIONS -->
+            <section class="section" id="notifications">
+
+                <h2>🔔 My Notifications</h2>
+
+                <p>
+                    Here you can see updates about your appointment
+                    approvals and rejections.
+                </p>
+
+                <div id="notificationsList">
+
+                    <div class="empty-state">
+                        No notifications yet.
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+<!-- FIREBASE AUTHENTICATION -->
+<script type="module">
+
+    import { auth } from "../js/firebase-config.js";
+
+    import {
+        onAuthStateChanged,
+        signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+    const userName = document.getElementById("userName");
+    const logoutButton = document.getElementById("logoutButton");
+
+    onAuthStateChanged(auth, (user) => {
+
+        if (!user) {
+            window.location.href = "../login.html";
+            return;
+        }
+
+        userName.textContent = user.displayName || "Visitor";
+
+    });
+
+    logoutButton.addEventListener("click", async () => {
+
+        try {
+
+            await signOut(auth);
+
+            window.location.href = "../login.html";
+
+        } catch (error) {
+
+            console.error("Logout error:", error);
+
+            alert("Unable to logout. Please try again.");
+
+        }
+
+    });
+
+</script>
+
+<!-- APPOINTMENT AND NOTIFICATION SYSTEM -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script type="module" src="../js/appointments.js"></script>
+
+</body>
+</html>
