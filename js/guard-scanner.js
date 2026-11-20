@@ -31,6 +31,7 @@ const manualScanButton = document.getElementById("manualScanButton");
 
 const startCameraButton = document.getElementById("startCameraButton");
 const stopCameraButton = document.getElementById("stopCameraButton");
+const switchCameraButton = document.getElementById("switchCameraButton");
 
 const visitorDetails = document.getElementById("visitorDetails");
 const visitorName = document.getElementById("visitorName");
@@ -46,6 +47,9 @@ const exitButton = document.getElementById("exitButton");
 let currentGuard = null;
 let scanner = null;
 let cameraRunning = false;
+let availableCameras = [];
+let currentCameraIndex = 0;
+
 let unsubscribeHistory = null;
 let scanInProgress = false;
 let selectedAppointment = null;
@@ -151,8 +155,10 @@ async function verifyPass(qrText) {
 
     } catch (error) {
         console.error("Pass verification error:", error);
+
         selectedAppointment = null;
         visitorDetails.hidden = true;
+
         showMessage(error.message || "Unable to verify pass.", "#dc2626");
 
     } finally {
@@ -208,9 +214,12 @@ async function recordAction(action) {
                         lastScannedAt: serverTimestamp()
                     });
                 }
+
             } else if (action === "EXIT") {
                 if (entryStatus !== "entered") {
-                    throw new Error("Record visitor entry before recording exit.");
+                    throw new Error(
+                        "Record visitor entry before recording exit."
+                    );
                 }
 
                 if (exitStatus === "exited") {
@@ -225,6 +234,7 @@ async function recordAction(action) {
                         lastScannedAt: serverTimestamp()
                     });
                 }
+
             } else {
                 throw new Error("Invalid action.");
             }
@@ -257,8 +267,10 @@ async function recordAction(action) {
 
         if (result.action === "ENTRY") {
             showMessage("ENTRY RECORDED SUCCESSFULLY.", "#168653");
+
         } else if (result.action === "EXIT") {
             showMessage("EXIT RECORDED SUCCESSFULLY.", "#2563eb");
+
         } else {
             showMessage(
                 "DUPLICATE " + action + "! This action was already recorded.",
@@ -274,15 +286,41 @@ async function recordAction(action) {
             "#dc2626"
         );
 
-        // Re-enable buttons based on the last known appointment state
         if (selectedAppointment) {
             updateActionButtons(selectedAppointment.data);
         }
     }
 }
 
+// Find available cameras
+async function getAvailableCameras() {
+    availableCameras = await Html5Qrcode.getCameras();
+
+    if (!availableCameras || availableCameras.length === 0) {
+        throw new Error("No camera found on this device.");
+    }
+
+    // Prefer the rear camera when its label is available
+    const rearCameraIndex = availableCameras.findIndex(camera =>
+        /back|rear|environment|world/i.test(camera.label || "")
+    );
+
+    if (rearCameraIndex !== -1) {
+        currentCameraIndex = rearCameraIndex;
+    } else if (
+        availableCameras.length > 1 &&
+        currentCameraIndex === 0
+    ) {
+        // On many phones, the last camera is the rear camera.
+        // This is a fallback when camera labels are unavailable.
+        currentCameraIndex = availableCameras.length - 1;
+    }
+
+    return availableCameras;
+}
+
 // Camera start
-async function startScanner() {
+async function startScanner(requestedIndex = null) {
     if (cameraRunning) return;
 
     if (typeof Html5Qrcode === "undefined") {
@@ -296,16 +334,20 @@ async function startScanner() {
     try {
         showMessage("Starting camera. Please wait...", "#2563eb");
 
-        scanner = new Html5Qrcode("reader");
+        await getAvailableCameras();
 
-        const cameras = await Html5Qrcode.getCameras();
-
-        if (!cameras || cameras.length === 0) {
-            throw new Error("No camera found on this device.");
+        if (requestedIndex !== null) {
+            currentCameraIndex =
+                (requestedIndex + availableCameras.length) %
+                availableCameras.length;
         }
 
+        const selectedCamera = availableCameras[currentCameraIndex];
+
+        scanner = new Html5Qrcode("reader");
+
         await scanner.start(
-            cameras[0].id,
+            selectedCamera.id,
             {
                 fps: 10,
                 qrbox: { width: 250, height: 250 }
@@ -331,13 +373,23 @@ async function startScanner() {
         );
 
         cameraRunning = true;
+
         startCameraButton.disabled = true;
         stopCameraButton.disabled = false;
 
-        showMessage("Camera started. Point it at a visitor QR pass.");
+        // Show Switch Camera only when multiple cameras exist
+        switchCameraButton.disabled = availableCameras.length < 2;
+
+        showMessage(
+            "Camera started: " +
+            (selectedCamera.label || "Camera " + (currentCameraIndex + 1)) +
+            ". Point it at a visitor QR pass."
+        );
 
     } catch (error) {
         console.error("Camera error:", error);
+
+        cameraRunning = false;
 
         showMessage(
             "Camera could not start: " +
@@ -345,12 +397,17 @@ async function startScanner() {
             "#dc2626"
         );
 
+        startCameraButton.disabled = false;
+        stopCameraButton.disabled = true;
+        switchCameraButton.disabled = true;
+
         if (scanner) {
             try {
                 await scanner.clear();
             } catch (clearError) {
                 console.log(clearError);
             }
+
             scanner = null;
         }
     }
@@ -358,10 +415,13 @@ async function startScanner() {
 
 // Camera stop
 async function stopScanner() {
-    if (!scanner || !cameraRunning) return;
+    if (!scanner) return;
 
     try {
-        await scanner.stop();
+        if (cameraRunning) {
+            await scanner.stop();
+        }
+
         await scanner.clear();
 
         cameraRunning = false;
@@ -369,12 +429,45 @@ async function stopScanner() {
 
         startCameraButton.disabled = false;
         stopCameraButton.disabled = true;
+        switchCameraButton.disabled = true;
 
         showMessage("Camera stopped.");
 
     } catch (error) {
         console.error("Camera stop error:", error);
-        showMessage("Unable to stop camera. Refresh the page if needed.", "#dc2626");
+
+        showMessage(
+            "Unable to stop camera. Refresh the page if needed.",
+            "#dc2626"
+        );
+    }
+}
+
+// Switch between available cameras
+async function switchCamera() {
+    if (!cameraRunning || availableCameras.length < 2) {
+        return;
+    }
+
+    const nextCameraIndex =
+        (currentCameraIndex + 1) % availableCameras.length;
+
+    try {
+        switchCameraButton.disabled = true;
+
+        showMessage("Switching camera...", "#2563eb");
+
+        await stopScanner();
+
+        await startScanner(nextCameraIndex);
+
+    } catch (error) {
+        console.error("Switch camera error:", error);
+
+        showMessage(
+            "Unable to switch camera: " + error.message,
+            "#dc2626"
+        );
     }
 }
 
@@ -390,10 +483,20 @@ manualScanButton.addEventListener("click", async () => {
     await verifyPass(qrText);
 });
 
-// Button events
-startCameraButton.addEventListener("click", startScanner);
-stopCameraButton.addEventListener("click", stopScanner);
+// Camera button events
+startCameraButton.addEventListener("click", () => {
+    startScanner();
+});
 
+stopCameraButton.addEventListener("click", () => {
+    stopScanner();
+});
+
+switchCameraButton.addEventListener("click", () => {
+    switchCamera();
+});
+
+// Entry and exit button events
 entryButton.addEventListener("click", () => {
     recordAction("ENTRY");
 });
@@ -478,6 +581,7 @@ function loadScanHistory(guardUid) {
         },
         (error) => {
             console.error("History error:", error);
+
             scanHistory.textContent =
                 "Unable to load scan history. Check Firestore rules.";
         }
@@ -502,15 +606,20 @@ onAuthStateChanged(auth, async (user) => {
             profileSnapshot.data().active !== true
         ) {
             alert("Access denied. Guard account required.");
+
             await signOut(auth);
+
             window.location.href = "../login.html";
             return;
         }
 
         currentGuard = user;
+
         loadScanHistory(user.uid);
 
-        showMessage("Guard verified. Start the camera or enter a pass manually.");
+        showMessage(
+            "Guard verified. Start the camera or enter a pass manually."
+        );
 
     } catch (error) {
         console.error("Guard authentication error:", error);
@@ -529,15 +638,17 @@ logoutButton.addEventListener("click", async () => {
             unsubscribeHistory();
         }
 
-        if (scanner && cameraRunning) {
+        if (scanner) {
             await stopScanner();
         }
 
         await signOut(auth);
+
         window.location.href = "../login.html";
 
     } catch (error) {
         console.error("Logout error:", error);
+
         alert("Unable to logout. Please try again.");
     }
 });
